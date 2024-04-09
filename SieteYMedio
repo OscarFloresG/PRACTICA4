@@ -289,22 +289,30 @@ public class SieteYMedio {
 
     // Método para determinar el ganador al finalizar el juego
     private void determinarGanador() {
-        // Determinar el ganador y mostrar los mensajes correspondientes
-        System.out.println("Resultados:");
+        double maxPuntos = 0;
+        int ganador = -1;
+        boolean empate = false;
 
+        // Determinar el jugador con la suma de puntos más alta
         for (int i = 0; i < numJugadores; i++) {
-            System.out.println("Jugador " + (i + 1) + ": " + sumasJugadores.get(i));
+            double suma = sumasJugadores.get(i);
+            if (suma <= 7.5 && suma > maxPuntos) {
+                maxPuntos = suma;
+                ganador = i;
+                empate = false;
+            } else if (suma <= 7.5 && suma == maxPuntos) {
+                empate = true;
+            }
         }
 
-        // Mostrar mensajes de resultado en la ventana del juego
-        Graphics g = gamePanel.getGraphics();
-        g.setFont(new Font("Arial", Font.PLAIN, 30));
-        g.setColor(Color.white);
-
-        for (int i = 0; i < numJugadores; i++) {
-            g.drawString("Jugador " + (i + 1) + ": " + sumasJugadores.get(i), 220, 250 + (40 * i));
+        // Mostrar mensaje del ganador o del empate
+        if (!empate && ganador != -1) {
+            JOptionPane.showMessageDialog(frame, "¡El jugador " + (ganador + 1) + " ha ganado con " + maxPuntos + " puntos!", "¡Felicidades!", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(frame, "¡Ha habido un empate!", "¡Empate!", JOptionPane.INFORMATION_MESSAGE);
         }
     }
+
 
     public static void main(String[] args) {
         new SieteYMedio();
