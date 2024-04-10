@@ -1,0 +1,336 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Random;
+import javax.swing.*;
+
+public class SieteYMedio {
+    private class Carta {
+        String valor;
+        String mazo;
+
+        Carta(String valor, String tipo) {
+            this.valor = valor;
+            this.mazo = tipo;
+        }
+
+        public String toString() {
+            return valor + "-" + mazo;
+        }
+
+        public double getValor() {
+            switch (valor) {
+                case "1":
+                    return 1;
+                case "2":
+                    return 2;
+                case "3":
+                    return 3;
+                case "4":
+                    return 4;
+                case "5":
+                    return 5;
+                case "6":
+                    return 6;
+                case "7":
+                    return 7;
+                default:
+                    return 0.5; // 10, 11, 12
+            }
+        }
+
+        public String getRutaImagen() {
+            //Ruta Oscar
+            return "C:/Users/HP/Documents/NetBeansProjects/Practica4.1/Siete/cards/" + toString() + ".png";
+            //Ruta Raul
+            //return "D:/Practica4/cards/" + toString() + ".png";
+        }
+    }
+    ArrayList<Carta> mazo;
+    Random random = new Random(); // Para barajear el mazo
+    // Jugadores
+    ArrayList<ArrayList<Carta>> manosJugadores;
+    ArrayList<Double> sumasJugadores;
+
+    // Creacion de la ventana de juego
+    int boardWidth = 1500;
+    int boardHeight = 800; // Tamaño del JFrame
+
+    int cardWidth = 90; // Tamaño de cartas ajustado
+    int cardHeight = 120;
+
+    JFrame frame = new JFrame("Siete y Medio");
+    JPanel gamePanel = new JPanel() {
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            // Dibujar manos de los jugadores
+            for (int j = 0; j < manosJugadores.size(); j++) {
+                ArrayList<Carta> mano = manosJugadores.get(j);
+                int x = 20;
+                int y = 20;
+                if (mano.size() > 0) {
+                    switch (j) {
+                        case 1:
+                            x = boardWidth - (cardWidth + 650);
+                            break;
+                        case 2:
+                            y = boardHeight - (cardHeight + 150);
+                            break;
+                        case 3:
+                            x = boardWidth - (cardWidth + 650);
+                            y = boardHeight - (cardHeight + 150);
+                            break;
+                    }
+                }
+                for (int i = 0; i < mano.size(); i++) {
+                    Carta carta = mano.get(i);
+                    Image cardImg = new ImageIcon(carta.getRutaImagen()).getImage();
+                    g.drawImage(cardImg, x + (cardWidth + 5) * i, y, cardWidth, cardHeight, null);
+                }
+            }
+
+            //Determinar ganador y/o perdedor de la partida
+            boolean todosHanTerminado = true;
+            for (int i = 0; i < manosJugadores.size(); i++) {
+                if (manosJugadores.get(i).size() > 0) {
+                    todosHanTerminado = false;
+                    break;
+                }
+            }
+
+            if (todosHanTerminado) {
+                determinarGanador();
+            }
+        }
+    };
+    //Botones y mensajes
+    ArrayList<JPanel> buttonPanels = new ArrayList<>();
+    ArrayList<JButton> hitButtons = new ArrayList<>();
+    ArrayList<JButton> stayButtons = new ArrayList<>();
+
+    JButton finishButton = new JButton("Finalizar Juego");
+
+    int numJugadores = 2; // Número predeterminado de jugadores
+    int jugadorActual = 0;
+
+    SieteYMedio() {
+        seleccionarNumeroJugadores();
+    }
+
+    // Método para seleccionar el número de jugadores
+    private void seleccionarNumeroJugadores() {
+        String[] opciones = {"2 Jugadores", "3 Jugadores", "4 Jugadores"};
+        int opcionSeleccionada = JOptionPane.showOptionDialog(frame, "Seleccione el número de jugadores", "Selección de Jugadores", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[0]);
+
+        switch (opcionSeleccionada) {
+            case 0:
+                numJugadores = 2;
+                break;
+            case 1:
+                numJugadores = 3;
+                break;
+            case 2:
+                numJugadores = 4;
+                break;
+            default:
+                numJugadores = 2; // Valor predeterminado
+                break;
+        }
+        comenzarJuego();
+    }
+
+    //Creacion del juego
+    public void comenzarJuego() {
+        // mazo
+        crearMazos();
+        mezclarMazo();
+
+        // Inicializar manos de los jugadores y sumas
+        manosJugadores = new ArrayList<>();
+        sumasJugadores = new ArrayList<>();
+        for (int i = 0; i < numJugadores; i++) {
+            ArrayList<Carta> mano = new ArrayList<>();
+            double suma = 0.0;
+            // Repartir una carta a cada jugador
+            Carta carta = mazo.remove(mazo.size() - 1);
+            suma += carta.getValor();
+            mano.add(carta);
+            manosJugadores.add(mano);
+            sumasJugadores.add(suma);
+        }
+
+        System.out.println("Manos de los jugadores:");
+        for (int i = 0; i < numJugadores; i++) {
+            System.out.println("Jugador " + (i + 1) + ":");
+            System.out.println(manosJugadores.get(i));
+            System.out.println("Suma: " + sumasJugadores.get(i));
+        }
+
+        frame.setVisible(true);
+        frame.setSize(boardWidth, boardHeight);
+        frame.setLocationRelativeTo(null);
+        frame.setResizable(false);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        gamePanel.setLayout(new BorderLayout());
+        gamePanel.setBackground(new Color(0, 94, 5));
+        //gamePanel.setBackground(new Color(175, 41, 41)); // Color rojo
+        frame.add(gamePanel, BorderLayout.CENTER);
+
+        JPanel bottomButtonPanel = new JPanel(new GridLayout(2, 2));
+
+        for (int i = 0; i < numJugadores; i++) {
+            JPanel buttonPanel = new JPanel();
+            JButton hitButton = new JButton("Jugador " + (i + 1) + " Pide");
+            JButton stayButton = new JButton("Jugador " + (i + 1) + " Mantenerse");
+            hitButtons.add(hitButton);
+            stayButtons.add(stayButton);
+
+            hitButton.setFocusable(false);
+            buttonPanel.add(hitButton);
+            stayButton.setFocusable(false);
+            buttonPanel.add(stayButton);
+
+            buttonPanels.add(buttonPanel);
+            bottomButtonPanel.add(buttonPanel);
+
+            int jugador = i;
+            hitButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    jugarTurno(jugador);
+                }
+            });
+
+            stayButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    terminarTurno(jugador);
+                }
+            });
+        }
+
+        frame.add(bottomButtonPanel, BorderLayout.SOUTH);
+
+        finishButton.setFocusable(false);
+        frame.add(finishButton, BorderLayout.NORTH);
+
+        finishButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // Finalizar el juego
+                for (JButton button : hitButtons) {
+                    button.setEnabled(false);
+                }
+                for (JButton button : stayButtons) {
+                    button.setEnabled(false);
+                }
+                determinarGanador();
+            }
+        });
+
+        gamePanel.repaint();
+    }
+
+    // Crear el mazo de las cartas para barajear
+    public void crearMazos() {
+        mazo = new ArrayList<>();
+        String[] valores = {"1", "2", "3", "4", "5", "6", "7", "10", "11", "12"};
+        String[] tipos = {"E", "O", "B", "C"};
+
+        for (String tipo : tipos) {
+            for (String valor : valores) {
+                Carta carta = new Carta(valor, tipo);
+                mazo.add(carta);
+            }
+        }
+    }
+
+    // Barajear el mazo construido
+    public void mezclarMazo() {
+        for (int i = 0; i < mazo.size(); i++) {
+            int j = random.nextInt(mazo.size());
+            Carta cartaActual = mazo.get(i);
+            Carta cartaRandom = mazo.get(j);
+            mazo.set(i, cartaRandom);
+            mazo.set(j, cartaActual);
+        }
+    }
+
+    // Método para jugar el turno de un jugador
+    private void jugarTurno(int jugador) {
+        if (jugador == jugadorActual) {
+            Carta carta = mazo.remove(mazo.size() - 1);
+            sumasJugadores.set(jugador, sumasJugadores.get(jugador) + carta.getValor());
+            manosJugadores.get(jugador).add(carta);
+            if (sumasJugadores.get(jugador) > 7.5) {
+                hitButtons.get(jugador).setEnabled(false);
+                stayButtons.get(jugador).setEnabled(false);
+                terminarTurno(jugador);
+            }
+            gamePanel.repaint();
+        }
+    }
+
+    // Método para terminar el turno de un jugador
+    private void terminarTurno(int jugador) {
+        if (jugador == jugadorActual) {
+            jugadorActual = (jugadorActual + 1) % numJugadores;
+            hitButtons.get(jugador).setEnabled(false);
+            stayButtons.get(jugador).setEnabled(false);
+            gamePanel.repaint();
+        }
+    }
+
+    // Método para determinar el ganador al finalizar el juego
+    private void determinarGanador() {
+        // Determinar el ganador y mostrar los mensajes correspondientes
+        System.out.println("Resultados:");
+
+        //garantizamos que el valor demaxSum sea menor que cualquier suma de puntos en el juego
+        double sumaGanadora = Double.MIN_VALUE;
+        // -1 para evitar que se inicialice como algun jugador del arreglo
+        int indiceGanador = -1;
+
+        boolean empate = false;
+
+        for (int i = 0; i < numJugadores; i++) {
+            System.out.println("Jugador " + (i + 1) + ": " + sumasJugadores.get(i));
+            double sumaActual = sumasJugadores.get(i);
+            if (sumaActual <= 7.5 && sumaActual > sumaGanadora) {
+                sumaGanadora = sumaActual;
+                indiceGanador = i;
+                empate = false;
+            } else if (sumaActual == sumaGanadora) {
+                empate = true;
+            }
+        }
+
+        // Mostrar mensajes de resultado en la ventana del juego
+        Graphics g = gamePanel.getGraphics();
+        g.setFont(new Font("Arial", Font.PLAIN, 30));
+        g.setColor(Color.white);
+
+        for (int i = 0; i < numJugadores; i++) {
+            g.drawString("Jugador " + (i + 1) + ": " + sumasJugadores.get(i), 220, 250 + (40 * i));
+        }
+
+        if (empate) {
+            String empateMsg = "Hubo un empate";
+            g.drawString(empateMsg, 920, 250);
+        } else if (indiceGanador != -1) {
+            g.drawString("Jugador " + (indiceGanador + 1) + " ha ganado", 920, 250);
+        } else {
+            g.drawString("No hay ganador", 920, 250);
+        }
+    }
+
+    //Ejecutar la clase
+    /*
+    No es necesario
+
+    public static void main(String[] args) {
+        new SieteYMedio();
+    }
+    */
+
+}
